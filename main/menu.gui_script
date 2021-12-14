@@ -1,0 +1,51 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+end
+
+
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+	local text = gui.get_node("lvlTxt")
+	local startBtn = gui.get_node("startBtn")
+	local settingsBtn = gui.get_node("settingsBtn")
+	local quitBtn = gui.get_node("quitBtn")
+	-- initialise the buttons as GUI nodes
+	if action_id == hash("attack") and action.pressed then
+		if gui.pick_node(startBtn, action.x, action.y) then
+			gui.set_text(text, "The level shall begin shortly :)")
+		elseif gui.pick_node(settingsBtn, action.x, action.y) then
+			gui.set_text(text, "The settings menu shall open shortly :)")
+		elseif gui.pick_node(quitBtn, action.x, action.y) then
+			gui.set_text(text, "The program shall close shortly :(")
+		end
+	end
+	--determine if player left click and then if that's true determine where that left click was
+	--if left click was on a button then perform the action of that button
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
