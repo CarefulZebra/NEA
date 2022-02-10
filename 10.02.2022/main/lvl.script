@@ -1,0 +1,143 @@
+function init(self)
+	math.randomseed(os.time())
+	math.random()
+	math.random(1, 100)
+	msg.post(".", "acquire_input_focus")
+	--dijkstra's pathfinding incoming
+	_G.dijkstra = {}
+	for i=1,10 do
+		_G.dijkstra[i] = {}
+		for j=1,10 do
+			_G.dijkstra[i][j] = vmath.vector3((1023 / 10) * j, (576 / 10) * i, 1)
+		end
+	end
+	unvisited = {}
+	dist = {}
+	prev = {}
+	count = 0
+	tempValue = math.huge
+	playerPos = go.get_position("/player/player")
+	tempK = vmath.vector3(0, 0, 1)
+	--print("big incoming")
+	for i,v in pairs(_G.dijkstra) do
+		for j,k in pairs(v) do
+			--print(_G.dijkstra[i][j])
+			dist[j + ((i-1) *10)] = math.huge 
+			unvisited[j + ((i-1) * 10)] = k
+			local pythagoras = math.sqrt((math.abs(k.x - playerPos.x) ^ 2) + (math.abs(k.y - playerPos.y) ^ 2))
+			if pythagoras < tempValue then
+				tempValue = pythagoras
+				tempK = k
+				tempRow = i
+				tempColumn = j
+			end
+		end
+	end
+	--print("big finished")
+	local nearest = tempK
+	newCount = 0
+	neAddress = (tempRow - 1) * 10 + tempColumn
+	dist[neAddress] = 0
+	--random = math.random(1, 100)
+	--random = 1
+	--print(random)
+	--nearest = unvisited[random]
+	--print("tester is " .. nearest)
+	--tempRow = math.floor((random - 1) / 10) + 1
+	--tempColumn = (random - 1) % 10 + 1
+	--print("double tester is " .. _G.dijkstra[tempRow][tempColumn])
+	while newCount > 101 do
+		print(newCount)
+		table.remove(unvisited, (10 * (tempRow - 1) + tempColumn))
+		neighbours = {}
+		neighboursCount = 1
+		if nearest.x > 103 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn - 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.x < 1022 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn + 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y > 58 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow - 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y < 575 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow + 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		for i,v in pairs(neighbours) do
+			--can we get some hype for the prepositions
+			print(nearest)
+			if v.x > nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn + 1)
+			elseif v.x < nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn - 1)
+			elseif v.y > nearest.y then
+				ngAddress = tempRow * 10 + tempColumn
+			else
+				ngAddress = (tempRow - 2) * 10 + tempColumn
+			end
+			temp = dist[neAddress] + 1
+			if temp < dist[ngAddress] then
+				dist[ngAddress] = temp
+				prev[ngAddress] = nearest
+			end
+		end
+		--the following will need optimisation lol
+		local tempDistance = math.huge
+		for j,k in pairs(dist) do
+			if k < tempDistance and unvisited[j] ~= nil then
+				k = tempDistance
+				nearestSlot = j
+			end
+		end
+		--print(nearestSlot)
+		--print(nearest)
+		nearest = unvisited[nearestSlot]
+		print(nearestSlot)
+		print(nearest)
+		--table.remove(unvisited, nearestSlot)
+		unvisited[nearestSlot] = nil
+		newCount = newCount + 1
+	end
+	for i,v in pairs(dist) do
+		print(v)
+	end
+end
+
+--currently it's not working correctly with the setting of dist[] i believe
+--your bigger issue, however, is collision objects - you will need to find some way to 
+--make it so that vertices get removed if they're "in" a collision object, w/o 
+--screwing up the checksums on lines 54 58 62 and 66
+--you can try this way w/o collision objects first, then implement them for the report
+--good luck 
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if math.fmod(_G.time, 300) == 0 then
+		
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
