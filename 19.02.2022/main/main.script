@@ -1,0 +1,30 @@
+function init(self)
+	print(go.get_id())
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	--msg.post("#collectionproxy", "load")
+	--msg.post("/lvl/cntrlr#collectionproxy", "unload")
+end
+
+function update(self, dt)
+	
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("kill") then
+		msg.post("/controller#collectionproxy", "unload")
+		msg.post("/lvl/cntrlr#collectionproxy", "load")
+	end
+	if message_id == hash("proxy_loaded") then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+		print("success")
+	end
+	if message_id == hash("hi") then
+		print("hi")
+	end
+end

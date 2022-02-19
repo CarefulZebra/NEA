@@ -1,0 +1,351 @@
+function init(self)
+	bulletsOnScreen = {}
+	gradients = {}
+	bulletXDirections = {}
+	math.randomseed(os.time())
+	math.random()
+	math.random(1, 100)
+	msg.post(".", "acquire_input_focus")
+	--dijkstra's pathfinding incoming
+	_G.dijkstra = {}
+	for i=1,10 do
+		_G.dijkstra[i] = {}
+		for j=1,10 do
+			_G.dijkstra[i][j] = vmath.vector3((1023 / 10) * j, (576 / 10) * i, 1)
+		end
+	end
+	unvisited = {}
+	dist = {}
+	_G.prev = {}
+	count = 0
+	tempValue = math.huge
+	playerPos = go.get_position("/player/player")
+	tempK = vmath.vector3(0, 0, 1)
+	--print("big incoming")
+	for i,v in pairs(_G.dijkstra) do
+		for j,k in pairs(v) do
+			--print(_G.dijkstra[i][j])
+			dist[j + ((i-1) *10)] = math.huge 
+			unvisited[j + ((i-1) * 10)] = k
+			local pythagoras = math.sqrt((math.abs(k.x - playerPos.x) ^ 2) + (math.abs(k.y - playerPos.y) ^ 2))
+			if pythagoras < tempValue then
+				tempValue = pythagoras
+				tempK = k
+				tempRow = i
+				tempColumn = j
+			end
+		end
+	end
+	--print("big finished")
+	local nearest = tempK
+	newCount = 0
+	neAddress = (tempRow - 1) * 10 + tempColumn
+	dist[neAddress] = 0
+	--random = math.random(1, 100)
+	--random = 1
+	--print(random)
+	--nearest = unvisited[random]
+	--print("tester is " .. nearest)
+	--tempRow = math.floor((random - 1) / 10) + 1
+	--tempColumn = (random - 1) % 10 + 1
+	--print("double tester is " .. _G.dijkstra[tempRow][tempColumn])
+	--print("1")
+	unvisited[10 * (tempRow - 1) + tempColumn] = nil
+	local nearestSlot = 10 * (tempRow - 1) + tempColumn
+	prev[nearestSlot] = nearest
+	while newCount < 100 do
+		--print("2")
+		--print("newCount " .. newCount)
+		for j,k in pairs(_G.dijkstra) do
+			for l,m in pairs(k) do
+				if m == nearest then
+					tempRow = j
+					tempColumn = l
+				end
+			end
+		end
+		neAddress = (tempRow - 1) * 10 + tempColumn
+		--print("tempRow " .. tempRow)
+		--print("tempColumn " .. tempColumn)
+		neighbours = {}
+		neighboursCount = 1
+		if nearest.x > 103 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn - 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.x < 1022 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn + 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y > 58 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow - 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y < 575 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow + 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		for i,v in pairs(neighbours) do
+			--can we get some hype for the prepositions
+			--print("nearest " .. nearest)
+			if v.x > nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn + 1)
+			elseif v.x < nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn - 1)
+			elseif v.y > nearest.y then
+				ngAddress = tempRow * 10 + tempColumn
+			else
+				ngAddress = (tempRow - 2) * 10 + tempColumn
+			end
+			temp = dist[neAddress] + 1
+			--print("temp " .. temp)
+			--print("dist[ngAddress] " .. dist[ngAddress])
+			if 222 <= v.x  and 768 >= v.x and 289 >= v.y and 98 <= v.y then
+				--print("fail")
+				dist[ngAddress] = math.huge
+			elseif v.y <= 97 then
+				--print("fail")
+				dist[ngAddress] = math.huge
+			elseif 222 <= v.x  and 768 >= v.x and 543 >= v.y and 383 <= v.y then
+				dist[ngAddress] = math.huge
+				--print("fail")
+			elseif 64 <= v.x  and 832 >= v.x and 576 >= v.y and 543 <= v.y then
+				dist[ngAddress] = math.huge
+				--print("fail")
+			elseif temp < dist[ngAddress] then
+				--print("success")
+				dist[ngAddress] = temp
+				--print("dist ngAddress " .. dist[ngAddress])
+				_G.prev[ngAddress] = nearest
+			end
+		end
+		--the following will need optimisation lol
+		local tempDistance = math.huge
+		local distSize = table.getn(dist)
+		if newCount ~= 0 then
+			unvisited[nearestSlot] = nil
+		end
+		for j=distSize, 1, -1 do
+			local k = dist[j]
+			--print("j " .. j)
+			--print("k is " .. k)
+			--print("tempDistance " .. tempDistance) 
+			--print(unvisited[j])
+			if k <= tempDistance and unvisited[j] ~= nil then
+				tempDistance = k
+				nearestSlot = j
+				--print("accepted, ")
+			end
+		end
+		--for j,k in pairs(dist) do
+			--if k <= tempDistance and unvisited[j] ~= nil then
+				--k = tempDistance
+				--nearestSlot = j
+			--end
+		--end
+		
+		--print("nearestSlot " .. nearestSlot)
+		--print("unvisited[nearestSlot] " .. unvisited[nearestSlot])
+		--print("unvisited size " .. table.getn(unvisited))
+		--print("nearest " .. nearest)
+		nearest = unvisited[nearestSlot]
+		--tempRow = 
+		--table.remove(unvisited, nearestSlot)
+		
+		newCount = newCount + 1
+	end
+	for i,v in pairs(_G.prev) do
+		current = _G.dijkstra[math.floor((i - 1) / 10) + 1][((i - 1) % 10) + 1]
+		
+		--print("loop " .. i .. " current " .. tostring(current) .. " prev " .. v)
+	end
+end
+
+--manually deal w/ coordinates of col objs and make sure that the points don't go through them they're written ont he postit note in front of you
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if paused == false then
+		--print(_G.time)
+		if math.fmod(_G.time, 300) == 0 then
+			--print("hihi")
+			_G.dijkstra = {}
+			for i=1,10 do
+				_G.dijkstra[i] = {}
+				for j=1,10 do
+					_G.dijkstra[i][j] = vmath.vector3((1023 / 10) * j, (576 / 10) * i, 1)
+				end
+			end
+			unvisited = {}
+			dist = {}
+			_G.prev = {}
+			count = 0
+			tempValue = math.huge
+			playerPos = go.get_position("/player/player")
+			playerPos.x = playerPos.x + 50
+			tempK = vmath.vector3(0, 0, 1)
+			--print("big incoming")
+			for i,v in pairs(_G.dijkstra) do
+				for j,k in pairs(v) do
+					--print(_G.dijkstra[i][j])
+					dist[j + ((i-1) *10)] = math.huge 
+					unvisited[j + ((i-1) * 10)] = k
+					local pythagoras = math.sqrt((math.abs(k.x - playerPos.x) ^ 2) + (math.abs(k.y - playerPos.y) ^ 2))
+					if pythagoras < tempValue then
+						tempValue = pythagoras
+						tempK = k
+						tempRow = i
+						tempColumn = j
+					end
+				end
+			end
+			--print("big finished")
+			local nearest = tempK
+			newCount = 0
+			neAddress = (tempRow - 1) * 10 + tempColumn
+			dist[neAddress] = 0
+			--random = math.random(1, 100)
+			--random = 1
+			--print(random)
+			--nearest = unvisited[random]
+			--print("tester is " .. nearest)
+			--tempRow = math.floor((random - 1) / 10) + 1
+			--tempColumn = (random - 1) % 10 + 1
+			--print("double tester is " .. _G.dijkstra[tempRow][tempColumn])
+			--print("1")
+			unvisited[10 * (tempRow - 1) + tempColumn] = nil
+			local nearestSlot = 10 * (tempRow - 1) + tempColumn
+			prev[nearestSlot] = nearest
+			while newCount < 100 do
+				--print("2")
+				--print("newCount " .. newCount)
+				for j,k in pairs(_G.dijkstra) do
+					for l,m in pairs(k) do
+						if m == nearest then
+							tempRow = j
+							tempColumn = l
+						end
+					end
+				end
+				neAddress = (tempRow - 1) * 10 + tempColumn
+				--print("tempRow " .. tempRow)
+				--print("tempColumn " .. tempColumn)
+				neighbours = {}
+				neighboursCount = 1
+				if nearest.x > 103 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn - 1]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.x < 1022 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn + 1]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.y > 58 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow - 1][tempColumn]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.y < 575 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow + 1][tempColumn]
+					neighboursCount = neighboursCount + 1
+				end
+				for i,v in pairs(neighbours) do
+					--can we get some hype for the prepositions
+					--print("nearest " .. nearest)
+					if v.x > nearest.x then
+						ngAddress = (tempRow - 1) * 10 + (tempColumn + 1)
+					elseif v.x < nearest.x then
+						ngAddress = (tempRow - 1) * 10 + (tempColumn - 1)
+					elseif v.y > nearest.y then
+						ngAddress = tempRow * 10 + tempColumn
+					else
+						ngAddress = (tempRow - 2) * 10 + tempColumn
+					end
+					temp = dist[neAddress] + 1
+					--print("temp " .. temp)
+					--print("dist[ngAddress] " .. dist[ngAddress])
+					if 222 <= v.x  and 768 >= v.x and 289 >= v.y and 98 <= v.y then
+						--print("fail")
+						dist[ngAddress] = math.huge
+					elseif v.y <= 97 then
+						--print("fail")
+						dist[ngAddress] = math.huge
+					elseif 222 <= v.x  and 768 >= v.x and 543 >= v.y and 383 <= v.y then
+						dist[ngAddress] = math.huge
+						--print("fail")
+					elseif 64 <= v.x  and 832 >= v.x and 576 >= v.y and 543 <= v.y then
+						dist[ngAddress] = math.huge
+						--print("fail")
+					elseif temp < dist[ngAddress] then
+						--print("success")
+						dist[ngAddress] = temp
+						--print("dist ngAddress " .. dist[ngAddress])
+						_G.prev[ngAddress] = nearest
+					end
+				end
+				--the following will need optimisation lol
+				local tempDistance = math.huge
+				local distSize = table.getn(dist)
+				if newCount ~= 0 then
+					unvisited[nearestSlot] = nil
+				end
+				for j=distSize, 1, -1 do
+					local k = dist[j]
+					--print("j " .. j)
+					--print("k is " .. k)
+					--print("tempDistance " .. tempDistance) 
+					--print(unvisited[j])
+					if k <= tempDistance and unvisited[j] ~= nil then
+						tempDistance = k
+						nearestSlot = j
+						--print("accepted, ")
+					end
+				end
+				--for j,k in pairs(dist) do
+				--if k <= tempDistance and unvisited[j] ~= nil then
+				--k = tempDistance
+				--nearestSlot = j
+				--end
+				--end
+
+				--print("nearestSlot " .. nearestSlot)
+				--print("unvisited[nearestSlot] " .. unvisited[nearestSlot])
+				--print("unvisited size " .. table.getn(unvisited))
+				--print("nearest " .. nearest)
+				nearest = unvisited[nearestSlot]
+				--tempRow = 
+				--table.remove(unvisited, nearestSlot)
+
+				newCount = newCount + 1
+			end
+		end
+		
+		for i,v in pairs(bulletsOnScreen) do
+			local bulletPos = go.get_position(v)
+			local gradient = gradients[i]
+			bulletDirection = bulletXDirections[i]
+			bulletPos.y = bulletPos.y + (gradient * math.sqrt(1/((gradient^2) + 1))) * bulletDirection
+			bulletPos.x = bulletPos.x + math.sqrt(1/((gradient^2) + 1)) * bulletDirection
+			go.set_position(bulletPos, v)
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
