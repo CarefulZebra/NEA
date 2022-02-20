@@ -1,0 +1,50 @@
+function init(self)
+	
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	local pos = go.get_position()
+	msg.post("#collisionobject", "apply_force", {force = vmath.vector3(0, 1000, 0), position = pos})
+	--negate gravity for the bullets as they are going too fast for that
+	
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("positions") then
+		mousePosition = message.position
+		--acquire the mouse's initial position from the player spawning the bullet 
+		
+	elseif message_id == hash("collision_response") then
+		
+		local id = go.get_id()
+		for i,v in pairs(bulletsOnScreen) do
+			if v == id then
+				go.delete(v)
+				table.remove(bulletsOnScreen, i)
+				table.remove(bulletXDirections, i)
+				table.remove(gradients, i)
+			end
+		end
+		-- if the bullet hits a collision object then iterate through the on screen bullets and delete the one that hit the collision object, removing it from all relelvant tables
+		
+	elseif message_id == hash("trigger_response") then
+		msg.post(message.other_id, "hit")
+		--if it goes in the range of some game object, tell that game object that it got hit
+		
+	end	
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_reload(self)
+	
+end

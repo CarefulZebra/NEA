@@ -1,0 +1,661 @@
+
+ã®
+‚Ifunction init(self)
+	bulletsOnScreen = {}
+	gradients = {}
+	bulletXDirections = {}
+	--initialise the tables necessary
+	
+	math.randomseed(os.time())
+	math.random()
+	math.random(1, 100)
+	--set some random numbers already in case i need truly random ones 
+	
+	msg.post(".", "acquire_input_focus")
+	
+	--dijkstra's pathfinding incoming
+	_G.dijkstra = {}
+	for i=1,10 do
+		_G.dijkstra[i] = {}
+		for j=1,10 do
+			_G.dijkstra[i][j] = vmath.vector3((1023 / 10) * j, (576 / 10) * i, 1)
+		end
+	end
+	unvisited = {}
+	dist = {}
+	_G.prev = {}
+	count = 0
+	tempValue = math.huge
+	playerPos = go.get_position("/player/player")
+	tempK = vmath.vector3(0, 0, 1)
+
+	for i,v in pairs(_G.dijkstra) do
+		for j,k in pairs(v) do
+			
+			dist[j + ((i-1) *10)] = math.huge 
+			unvisited[j + ((i-1) * 10)] = k
+			--initialise the distance for all nodes as infinity and add every node to unvisited
+			
+			local pythagoras = math.sqrt((math.abs(k.x - playerPos.x) ^ 2) + (math.abs(k.y - playerPos.y) ^ 2))
+			if pythagoras < tempValue then
+				tempValue = pythagoras
+				tempK = k
+				tempRow = i
+				tempColumn = j
+				--use temp values to find the node in the row and column nearest to the player
+			end
+		end
+	end
+	
+	
+	local nearest = tempK
+	newCount = 0
+	neAddress = (tempRow - 1) * 10 + tempColumn
+	dist[neAddress] = 0
+	unvisited[10 * (tempRow - 1) + tempColumn] = nil
+	--set the node nearest to the player as the one found earlier, find the address for that node, set the dist to that node as 0 and remove it from unvisited
+	
+	local nearestSlot = 10 * (tempRow - 1) + tempColumn
+	prev[nearestSlot] = nearest
+	--set the previous node for the node nearest to the player as itself so that the pathfinding stops there
+	
+	while newCount < 100 do
+	--while instead of for for testing reasons
+		for j,k in pairs(_G.dijkstra) do
+			for l,m in pairs(k) do
+				if m == nearest then
+					tempRow = j
+					tempColumn = l
+				end
+			end
+		end
+		--find the row and column of the current node being looked at
+		
+		neAddress = (tempRow - 1) * 10 + tempColumn
+		--find the address of the node being looked at
+		
+		neighbours = {}
+		neighboursCount = 1
+		if nearest.x > 103 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn - 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.x < 1022 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn + 1]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y > 58 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow - 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		if nearest.y < 575 then
+			neighbours[neighboursCount] = _G.dijkstra[tempRow + 1][tempColumn]
+			neighboursCount = neighboursCount + 1
+		end
+		--add the node to the left of the current node to the neighbours array if it exists and the same for the nodes above, below, and to the right
+		--also increment neighboursCount for how many neighbours there are
+		
+		for i,v in pairs(neighbours) do
+			
+			if v.x > nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn + 1)
+			elseif v.x < nearest.x then
+				ngAddress = (tempRow - 1) * 10 + (tempColumn - 1)
+			elseif v.y > nearest.y then
+				ngAddress = tempRow * 10 + tempColumn
+			else
+				ngAddress = (tempRow - 2) * 10 + tempColumn
+			end
+			--find the address of the current neighbour of the current node
+			
+			temp = dist[neAddress] + 1
+			--get the distance for this neighbour
+			
+			if 222 <= v.x  and 768 >= v.x and 289 >= v.y and 98 <= v.y then
+				dist[ngAddress] = math.huge
+			elseif v.y <= 97 then
+				dist[ngAddress] = math.huge
+			elseif 222 <= v.x  and 768 >= v.x and 543 >= v.y and 383 <= v.y then
+				dist[ngAddress] = math.huge
+			elseif 64 <= v.x  and 832 >= v.x and 576 >= v.y and 543 <= v.y then
+				dist[ngAddress] = math.huge
+			--if the current neighbour is in a collision object then set the distance to that neighbour as infinity
+			
+			elseif temp < dist[ngAddress] then
+				dist[ngAddress] = temp
+				_G.prev[ngAddress] = nearest
+				--if the neighbour is not in a collision object and the current distance to it is less than the distance held for that neighbour then update the nieghbour's distance
+			end
+		end
+		
+		local tempDistance = math.huge
+		local distSize = table.getn(dist)
+		
+		if newCount ~= 0 then
+			unvisited[nearestSlot] = nil
+			--remove the current node from unvisited, as it has been visited
+			
+		end
+		for j=distSize, 1, -1 do
+			local k = dist[j]
+			
+			if k <= tempDistance and unvisited[j] ~= nil then
+				tempDistance = k
+				nearestSlot = j
+				
+			end
+		end
+		--using temporary variables, iterate through unvisted and dist to find the next node with the minimum distance to update its distance
+		
+		nearest = unvisited[nearestSlot]
+		--set that node as the next node to be looked at
+		
+		newCount = newCount + 1
+		--update the counter so that the loop only does 100 nodes so as to save computational power
+		
+	end
+
+end
+
+--manually deal w/ coordinates of col objs and make sure that the points don't go through them they're written ont he postit note in front of you
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	if paused == false then
+		--most of every relevant script's update() function only runs if the player hasn't indicated they want to pause the game
+		if math.fmod(_G.time, 300) == 0 then
+			--the following is the same dijkstra's code, and therefore does not have comments as those can be referenced above. 
+			--a function was not created for both testing and fine tuning purposes, and as it is not strictly _that_ effective here (see report)
+			_G.dijkstra = {}
+			for i=1,10 do
+				_G.dijkstra[i] = {}
+				for j=1,10 do
+					_G.dijkstra[i][j] = vmath.vector3((1023 / 10) * j, (576 / 10) * i, 1)
+				end
+			end
+			unvisited = {}
+			dist = {}
+			_G.prev = {}
+			count = 0
+			tempValue = math.huge
+			playerPos = go.get_position("/player/player")
+			playerPos.x = playerPos.x + 50
+			tempK = vmath.vector3(0, 0, 1)
+			for i,v in pairs(_G.dijkstra) do
+				for j,k in pairs(v) do
+					dist[j + ((i-1) *10)] = math.huge 
+					unvisited[j + ((i-1) * 10)] = k
+					local pythagoras = math.sqrt((math.abs(k.x - playerPos.x) ^ 2) + (math.abs(k.y - playerPos.y) ^ 2))
+					if pythagoras < tempValue then
+						tempValue = pythagoras
+						tempK = k
+						tempRow = i
+						tempColumn = j
+					end
+				end
+			end
+			local nearest = tempK
+			newCount = 0
+			neAddress = (tempRow - 1) * 10 + tempColumn
+			dist[neAddress] = 0
+			unvisited[10 * (tempRow - 1) + tempColumn] = nil
+			local nearestSlot = 10 * (tempRow - 1) + tempColumn
+			prev[nearestSlot] = nearest
+			while newCount < 100 do
+				for j,k in pairs(_G.dijkstra) do
+					for l,m in pairs(k) do
+						if m == nearest then
+							tempRow = j
+							tempColumn = l
+						end
+					end
+				end
+				neAddress = (tempRow - 1) * 10 + tempColumn
+				neighbours = {}
+				neighboursCount = 1
+				if nearest.x > 103 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn - 1]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.x < 1022 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow][tempColumn + 1]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.y > 58 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow - 1][tempColumn]
+					neighboursCount = neighboursCount + 1
+				end
+				if nearest.y < 575 then
+					neighbours[neighboursCount] = _G.dijkstra[tempRow + 1][tempColumn]
+					neighboursCount = neighboursCount + 1
+				end
+				for i,v in pairs(neighbours) do
+					if v.x > nearest.x then
+						ngAddress = (tempRow - 1) * 10 + (tempColumn + 1)
+					elseif v.x < nearest.x then
+						ngAddress = (tempRow - 1) * 10 + (tempColumn - 1)
+					elseif v.y > nearest.y then
+						ngAddress = tempRow * 10 + tempColumn
+					else
+						ngAddress = (tempRow - 2) * 10 + tempColumn
+					end
+					temp = dist[neAddress] + 1
+					if 222 <= v.x  and 768 >= v.x and 289 >= v.y and 98 <= v.y then
+						dist[ngAddress] = math.huge
+					elseif v.y <= 97 then
+						dist[ngAddress] = math.huge
+					elseif 222 <= v.x  and 768 >= v.x and 543 >= v.y and 383 <= v.y then
+						dist[ngAddress] = math.huge
+					elseif 64 <= v.x  and 832 >= v.x and 576 >= v.y and 543 <= v.y then
+						dist[ngAddress] = math.huge
+					elseif temp < dist[ngAddress] then
+						dist[ngAddress] = temp
+						_G.prev[ngAddress] = nearest
+					end
+				end
+				local tempDistance = math.huge
+				local distSize = table.getn(dist)
+				if newCount ~= 0 then
+					unvisited[nearestSlot] = nil
+				end
+				for j=distSize, 1, -1 do
+					local k = dist[j]
+					if k <= tempDistance and unvisited[j] ~= nil then
+						tempDistance = k
+						nearestSlot = j
+					end
+				end
+				nearest = unvisited[nearestSlot]
+				newCount = newCount + 1
+			end
+		end
+		
+		for i,v in pairs(bulletsOnScreen) do
+			
+			local bulletPos = go.get_position(v)
+			local gradient = gradients[i]
+			bulletDirection = bulletXDirections[i]
+			bulletPos.y = bulletPos.y + (gradient * math.sqrt(1/((gradient^2) + 1))) * bulletDirection
+			bulletPos.x = bulletPos.x + math.sqrt(1/((gradient^2) + 1)) * bulletDirection
+			go.set_position(bulletPos, v)
+			--for every bullet on the screen, update their position relative to their current position and their gradient
+			
+		end
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_reload(self)
+	
+end
+/main/lvl.scriptá/LJ @/main/lvl.script¥  *±Åõ4  7  4  7 4  7 6 96 9B A 6 9B6 9) )d B6 9	'
+ ' B6 4  =) )
+ ) MÄ6 94  <) )
+ ) MÄ6	 9		8		6
+ 9
+
+ ) B
+<
+	OıOÏ4  7 4  7 6 4  =)  7 6 97 6 9' B7 6 9)  )  ) B7 6 6 9BH/Ä6  BH	)Ä6  	6 9<6  	<
+6 96 99
+6 9!B) %6 99
+6 9!B) % B6  XÄ7 7
+ 7  7	! F	R	’FRœ6 )  7" 6  6!  7# 6 6# )  <6 6  6!  +  <6  6!  6 <6" )d  XÅUÅ6 6 9BH
+Ä6 	 BHÄ XÄ7  7! FR˙FRÙ6  6!  7# 4  7$ ) 7% 9)g  XÄ6$ 6% 6 96  86! 8<6% 7% 9)˛ XÄ6$ 6% 6 96  86! 8<6% 7% 9):  XÄ6$ 6% 6 96  86! 8<6% 7% 9)? XÄ6$ 6% 6 96  86! 8<6% 7% 6 6$ BHáÄ99		 XÄ6  6	! 		 	7& XÄ99		 XÄ6  6	! 		 	7& XÄ99		 XÄ6  6	!  	7& XÄ6  6	!  	7& 6 6	# 8	7' 9)	ﬁ 	 XÄ9)	 	 XÄ9)	!	 X
+Ä9)	b 	 XÄ6 6	& 6
+ 9
+
+<
+	XDÄ9)	a 	 XÄ6 6	& 6
+ 9
+
+<
+	X:Ä9)	ﬁ 	 XÄ9)	 	 XÄ9)		 X
+Ä9)		 XÄ6 6	& 6
+ 9
+
+<
+	X$Ä9)	@ 	 XÄ9)	@	 XÄ9)	@	 X
+Ä9)		 XÄ6 6	& 6
+ 9
+
+<
+	XÄ6' 6	 6
+& 8	
+		 XÄ6 6	& 6
+' <
+	6 96	& <	FRw6 96( 9)6 B6"  XÄ6 +  < ) )ˇˇMÄ6	 8			 X
+Ä6
+ 8
+
+
+
+  X
+Ä	  Oı6 86" 7" XÓ~K  	getn
+table	tempngAddressneighboursCountneighboursneAddressnewCounttempColumntempRowyxabs	sqrt
+pairs
+tempKplayerPos/player/playerget_positiongotempValue	huge
+count	prev	distunvisitedvector3
+vmathdijkstra_Gacquire_input_focus.	postmsgrandom	timeosrandomseed	mathbulletXDirectionsgradientsbulletsOnScreenÁÃô≥≥¶ÊÇõ≥ÊÃÃô≥Ç        !!!!!$$$$$$$$$$$$$$$$$$$$$$%%%&'()0112222223333444444447777788;;;;;=====>>>>??@A>>==GGGGGGJJKKLLLLMMMMMMMMMMNNNPPPPQQQQQQQQQQRRRTTTTUUUUUUUUUUVVVXXXXYYYYYYYYYYZZZ____aaaabbbbbbbbccccddddddddeeeeffffffhhhhhhlllllooooooooooooooooppppppqqqqrrrrrrssssssssssssssssttttttuuuuuuuuuuuuuuuuvvvvvvyyyyyyzzzz{{{{__ÄÄÅÅÅÅÉÉÉÑÑÑààààââããããããåçàììññññõself  ≤   i   j 
+(2 2 2i /v  /, , ,j )k  )pythagoras "nearest ÆnearestSlot ï  j 
+k  
+  l m  Yä ä äi áv  átempDistance ãdistSize 	  j 
+k      	üK  self   å  '’”•z6   X—Å6 96 9),B	  XúÅ6 4  =) )
+ ) MÄ6 94  <) )
+ ) MÄ6
+ 9
+
+8
+
+6 9	) B<	
+OıOÏ4  7 4  7	 6 4  =
+)  7 6 97 6 9' B7 6 6 9=6 9)  )  ) B7 6 6 9BH/Ä6  BH
+)Ä6	  
+6 9<6  
+<6 96 996 9!B) %6 996 9!B) % B6  XÄ7 7 7 7
+ F
+R
+’FRœ6 )  7 6 6  7 6	 6 )  <6 6 6  +  <6 6  6
+ <6 )d  XÅUÅ6 6 9BH
+Ä6	 
+ B	HÄ XÄ7 7 FR˙FRÙ6 6  7 4  7 ) 7 9)g  XÄ6 6 6 96 86 8<6 7 9)˛ XÄ6 6 6 96 86 8<6 7 9):  XÄ6 6 6 96 86 8<6 7 9)? XÄ6 6 6 96 86 8<6 7 6 6 BHáÄ9	9
+
+	 X	Ä6	 				6
+ 
+
+ 	
+	7	 X	Ä9	9
+	
+ X	Ä6	 				6
+ 
+
+ 	
+	7	 X	Ä9	9
+
+	 X	Ä6	 		6
+  	
+	7	 X	Ä6	 				6
+  	
+	7	 6		 6
+ 8	
+			7	 9	)
+ﬁ 
+	 X	Ä9	)
+ 	
+ X	Ä9	)
+!	
+ X	
+Ä9	)
+b 
+	 X	Ä6		 6
+ 6 9<
+	X	DÄ9	)
+a 	
+ X	Ä6		 6
+ 6 9<
+	X	:Ä9	)
+ﬁ 
+	 X	Ä9	)
+ 	
+ X	Ä9	)
+	
+ X	
+Ä9	)
+
+	 X	Ä6		 6
+ 6 9<
+	X	$Ä9	)
+@ 
+	 X	Ä9	)
+@	
+ X	Ä9	)
+@	
+ X	
+Ä9	)
+
+	 X	Ä6		 6
+ 6 9<
+	X	Ä6	 6
+	 6 8
+
+	
+ X	Ä6		 6
+ 6 <
+	6	 9	
+	6
+ <
+	FRw6 96  9!6	 B6   XÄ6 +  < ) )ˇˇMÄ6
+	 8
+	
+
+ XÄ6 8	
+  XÄ
+ 	 Oı6 86 7 XÓ~6 6" BH'Ä6 9 B6# 86	$ 8		7	% 9	6
+ 9
+
+) %B
+"
+
+6% "
+
+ 	
+	=	9	6
+ 9
+
+) %B
+6% "
+
+ 	
+	=	6	 9	&	
+  B	FR◊K  set_positionbulletDirectionbulletXDirectionsgradientsbulletsOnScreen	getn
+table	tempngAddressneighboursCountneighboursneAddressnewCounttempColumntempRowyabs	sqrt
+pairs
+tempKxplayerPos/player/playerget_positiongotempValue	huge
+count	prev	distunvisitedvector3
+vmathdijkstra	time_G	fmod	mathpaused ÁÃô≥≥¶ÊÇõ≥ÊÃÃô≥Çd				
+
+
+
+
+
+
+
+
+
+	"##$$$$$$%%%%&&&&&&&&'''''(()))))*****++++,,-.++**2222223344555566666666667779999::::::::::;;;====>>>>>>>>>>???AAAABBBBBBBBBBCCCEEEEFFFFGGGGGGGGHHHHIIIIIIIIJJJJKKKKKKMMMMMMOOOOOPPPPPPPPPPPPPPPPQQQQQQRRRRSSSSSSTTTTTTTTTTTTTTTTUUUUUUVVVVVVVVVVVVVVVVWWWWWWXXXXXXYYYYZZZZEE]]^^^^___```bbbbccddddddefbiijjjjnnnnppppqqrrrsssssssssssssttttttttttttuuuuunnzself  ÷dt  ÷  i   j 
+-2 2 2i /v  /, , ,j )k  )pythagoras "nearest ≠nearestSlot î  j 
+k  
+  l m  Yä ä äi áv  átempDistance ãdistSize 	  j 
+k * * *i 'v  'bulletPos #gradient ! 8    )°K  self  message_id  message  sender   -    •K  self  action_id  action       	©K  self   ê    ¨3   7  3  7  3  7  3  7  3  7 	 3 
+ 7  K  on_reload on_input on_message update 
+final 	init ú  £ ü • #!'%+)+  "á/LJ@/main/lvl.script¥  *±Åõ4  7  4  7 4  7 6 96 9B A 6 9B6 9) )d B6 9	'
+ ' B6 4  =) )
+ ) MÄ6 94  <) )
+ ) MÄ6	 9		8		6
+ 9
+
+ ) B
+<
+	OıOÏ4  7 4  7 6 4  =)  7 6 97 6 9' B7 6 9)  )  ) B7 6 6 9BH/Ä6  BH	)Ä6  	6 9<6  	<
+6 96 99
+6 9!B) %6 99
+6 9!B) % B6  XÄ7 7
+ 7  7	! F	R	’FRœ6 )  7" 6  6!  7# 6 6# )  <6 6  6!  +  <6  6!  6 <6" )d  XÅUÅ6 6 9BH
+Ä6 
+ BHÄ XÄ7  7! FR˙FRÙ6  6!  7# 4  7$ ) 7% 9)g  XÄ6$ 6% 6 96  86! 8<6% 7% 9)˛ XÄ6$ 6% 6 96  86! 8<6% 7% 9):  XÄ6$ 6% 6 96  86! 8<6% 7% 9)? XÄ6$ 6% 6 96  86! 8<6% 7% 6 6$ BHáÄ99		 XÄ6  6	! 		 	7& XÄ99		 XÄ6  6	! 		 	7& XÄ99		 XÄ6  6	!  	7& XÄ6  6	!  	7& 6 6	# 8	7' 9)	ﬁ 	 XÄ9)	 	 XÄ9)	!	 X
+Ä9)	b 	 XÄ6 6	& 6
+ 9
+
+<
+	XDÄ9)	a 	 XÄ6 6	& 6
+ 9
+
+<
+	X:Ä9)	ﬁ 	 XÄ9)	 	 XÄ9)		 X
+Ä9)		 XÄ6 6	& 6
+ 9
+
+<
+	X$Ä9)	@ 	 XÄ9)	@	 XÄ9)	@	 X
+Ä9)		 XÄ6 6	& 6
+ 9
+
+<
+	XÄ6' 6	 6
+& 8	
+		 XÄ6 6	& 6
+' <
+	6 96	& <	FRw6 96( 9)6 B6"  XÄ6 +  < ) )ˇˇMÄ6	 8			 X
+Ä6
+ 8
+
+
+
+  X
+Ä	  Oı6 86" 7" XÓ~K  	getn
+table	tempngAddressneighboursCountneighboursneAddressnewCounttempColumntempRowyxabs	sqrt
+pairs
+tempKplayerPos/player/playerget_positiongotempValue	huge
+count	prev	distunvisitedvector3
+vmathdijkstra_Gacquire_input_focus.	postmsgrandom	timeosrandomseed	mathbulletXDirectionsgradientsbulletsOnScreenÁÃô≥≥¶ÊÇõ≥ÊÃÃô≥Ç        !!!!!$$$$$$$$$$$$$$$$$$$$$$%%%&'()0112222223333444444447777788;;;;;=====>>>>??@A>>==GGGGGGJJKKLLLLMMMMMMMMMMNNNPPPPQQQQQQQQQQRRRTTTTUUUUUUUUUUVVVXXXXYYYYYYYYYYZZZ____aaaabbbbbbbbccccddddddddeeeeffffffhhhhhhlllllooooooooooooooooppppppqqqqrrrrrrssssssssssssssssttttttuuuuuuuuuuuuuuuuvvvvvvyyyyyyzzzz{{{{__ÄÄÅÅÅÅÉÉÉÑÑÑààààââããããããåçàììññññõself  ≤   i   j 
+(2 2 2i /v  /, , ,j )k  )pythagoras "nearest ÆnearestSlot ï  j 
+k  
+  l m  Yä ä äi áv  átempDistance ãdistSize 	  j 
+k      	üK  self   å  '’”•z6   X—Å6 96 9),B	  XúÅ6 4  =) )
+ ) MÄ6 94  <) )
+ ) MÄ6
+ 9
+
+8
+
+6 9	) B<	
+OıOÏ4  7 4  7	 6 4  =
+)  7 6 97 6 9' B7 6 6 9=6 9)  )  ) B7 6 6 9BH/Ä6 	 BH
+)Ä6	  
+6 9<6  
+<6 96 996 9!B) %6 996 9!B) % B6  XÄ7 7 7 7
+ F
+R
+’FRœ6 )  7 6 6  7 6	 6 )  <6 6 6  +  <6 6  6
+ <6 )d  XÅUÅ6 6 9BH
+Ä6	  B	HÄ XÄ7 7 FR˙FRÙ6 6  7 4  7 ) 7 9)g  XÄ6 6 6 96 86 8<6 7 9)˛ XÄ6 6 6 96 86 8<6 7 9):  XÄ6 6 6 96 86 8<6 7 9)? XÄ6 6 6 96 86 8<6 7 6 6 BHáÄ9	9
+
+	 X	Ä6	 				6
+ 
+
+ 	
+	7	 X	Ä9	9
+	
+ X	Ä6	 				6
+ 
+
+ 	
+	7	 X	Ä9	9
+
+	 X	Ä6	 		6
+  	
+	7	 X	Ä6	 				6
+  	
+	7	 6		 6
+ 8	
+			7	 9	)
+ﬁ 
+	 X	Ä9	)
+ 	
+ X	Ä9	)
+!	
+ X	
+Ä9	)
+b 
+	 X	Ä6		 6
+ 6 9<
+	X	DÄ9	)
+a 	
+ X	Ä6		 6
+ 6 9<
+	X	:Ä9	)
+ﬁ 
+	 X	Ä9	)
+ 	
+ X	Ä9	)
+	
+ X	
+Ä9	)
+
+	 X	Ä6		 6
+ 6 9<
+	X	$Ä9	)
+@ 
+	 X	Ä9	)
+@	
+ X	Ä9	)
+@	
+ X	
+Ä9	)
+
+	 X	Ä6		 6
+ 6 9<
+	X	Ä6	 6
+	 6 8
+
+	
+ X	Ä6		 6
+ 6 <
+	6	 9	
+	6
+ <
+	FRw6 96  9!6	 B6   XÄ6 +  < ) )ˇˇMÄ6
+	 8
+	
+
+ XÄ6 8	
+  XÄ
+ 	 Oı6 86 7 XÓ~6 6" BH'Ä6 9	 B6# 86	$ 8		7	% 9	6
+ 9
+
+) %B
+"
+
+6% "
+
+ 	
+	=	9	6
+ 9
+
+) %B
+6% "
+
+ 	
+	=	6	 9	&	  B	FR◊K  set_positionbulletDirectionbulletXDirectionsgradientsbulletsOnScreen	getn
+table	tempngAddressneighboursCountneighboursneAddressnewCounttempColumntempRowyabs	sqrt
+pairs
+tempKxplayerPos/player/playerget_positiongotempValue	huge
+count	prev	distunvisitedvector3
+vmathdijkstra	time_G	fmod	mathpaused ÁÃô≥≥¶ÊÇõ≥ÊÃÃô≥Çd				
+
+
+
+
+
+
+
+
+
+	"##$$$$$$%%%%&&&&&&&&'''''(()))))*****++++,,-.++**2222223344555566666666667779999::::::::::;;;====>>>>>>>>>>???AAAABBBBBBBBBBCCCEEEEFFFFGGGGGGGGHHHHIIIIIIIIJJJJKKKKKKMMMMMMOOOOOPPPPPPPPPPPPPPPPQQQQQQRRRRSSSSSSTTTTTTTTTTTTTTTTUUUUUUVVVVVVVVVVVVVVVVWWWWWWXXXXXXYYYYZZZZEE]]^^^^___```bbbbccddddddefbiijjjjnnnnppppqqrrrsssssssssssssttttttttttttuuuuunnzself  ÷dt  ÷  i   j 
+-2 2 2i /v  /, , ,j )k  )pythagoras "nearest ≠nearestSlot î  j 
+k  
+  l m  Yä ä äi áv  átempDistance ãdistSize 	  j 
+k * * *i 'v  'bulletPos #gradient ! 8    )°K  self  message_id  message  sender   -    •K  self  action_id  action       	©K  self   ê    ¨3   7  3  7  3  7  3  7  3  7 	 3 
+ 7  K  on_reload on_input on_message update 
+final 	init ú  £ ü • #!'%+)+  " 
