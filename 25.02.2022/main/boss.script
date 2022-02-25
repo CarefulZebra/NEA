@@ -1,0 +1,136 @@
+function init(self)
+	jumpCounter = 0
+	noJumpCounter = 0
+	distChecker = {1}
+	needToJump = false
+	bossHealth = 100
+	flagX = false
+	--initialisation of the variables needed later on
+end
+
+function final(self)
+	
+end
+
+function update(self, dt)
+	if paused == false then
+		--most of every relevant script's update() function only runs if the player hasn't indicated they want to pause the game
+		
+		if spawned == true then
+			--the boss only runs its code if it has been "spawned" in by the death of the bee
+			
+			if bossHealth == 0 then
+				go.delete(go.get_id())
+				sys.exit(0)
+			end
+			--if the boss's health is 0 then delete the game object and deleted the application as the game is thereby over
+			
+			local oldPos = go.get_position()
+			local distCheckerSize = table.getn(distChecker)
+			--the boss has a distChecker table to check whether or not it is stuck on an object or not
+			
+			if distCheckerSize == 3 then
+				if math.abs(distChecker[3].x - distChecker[2].x) < 10 and flagX == false then
+					
+					jumpCounter = 25
+					
+				elseif math.fmod(_G.time, 60) == 0 then
+					--update the distChecker table every second
+					table.insert(distChecker, oldPos)
+					
+				end
+				
+				table.remove(distChecker, 1)
+				--if the boss hasn't moved in a while and it's not in range of the player then tell it to jump, as there is very likely a collision object in its path
+				
+			else
+				if math.fmod(_G.time, 60) == 0 then
+					
+					table.insert(distChecker, oldPos)
+					--update the distChecker table every second
+					
+				end
+			end
+			
+			local playerPos = go.get_position("/player/player")
+			local newPos = go.get_position()
+			local bossPythag = math.sqrt((math.abs(newPos.x - playerPos.x) ^ 2) + (math.abs(newPos.y - playerPos.y) ^ 2))
+			flagX = false
+			--get the position of the boss, the player, find the straight line distance from the player to the boss, and initialise the flag to check if the boss is in range of the player
+			
+			if jumpCounter == 0 then
+				if oldPos.x - playerPos.x > 50 then
+					newPos.x = newPos.x - 1
+				elseif oldPos.x - playerPos.x < -50 then
+					newPos.x = newPos.x + 1
+				elseif bossPythag < 100 then
+					flagX = true
+				end
+				go.set_position(newPos)
+				--if the boss isn't jumping then move left if the player is to the left, right if the player is to the right, and otherwise if in range of the player then update the flag 
+			else
+				
+				newPos.y = newPos.y + 2
+				go.set_position(newPos)
+				jumpCounter = jumpCounter - 1
+				--if the boss is jumping then move up until the jump counter has ended (25 times)
+				
+			end
+			if bossInPlayerDistance == true and math.fmod(_G.time, 180) == 0 then
+				
+				msg.post("/player/player", "hit")
+				--if in range of the player, hit the player every 3 seconds
+				
+				if playerRangedAttack <= playerMeleeAttack then
+					msg.post("/player/player", "knockback")
+					--if the player prefers melee attack then tell the player it is being attacked with the knockback attack
+					
+				else
+					msg.post("/player/player", "pullIn")
+					--if the player prefers ranged attack then tell the player it is being attacked with the pullIn attack
+					
+				end
+			end
+		else
+			
+			local pos = go.get_position()
+			msg.post("#collisionobject", "apply_force", {force = vmath.vector3(0, 1000, 0), position = pos})
+			--if the boss isn't spawned yet then negate gravity
+			
+		end
+	elseif spawned == false then
+		local pos = go.get_position()
+		msg.post("#collisionobject", "apply_force", {force = vmath.vector3(0, 1000, 0), position = pos})
+		--if the boss isn't spawned yet and the game is paused then negate gravity
+		
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	
+	if message_id == hash("hit") then
+		bossHealth = bossHealth - 10
+	end
+	--if the boss gets hit then update the boss's health
+	
+	if message_id == hash("trigger_response") then
+		if message.enter and message.other_id == hash("/player/player") then
+			msg.post(message.other_id, "enter&" .. go.get_id())
+			bossInPlayerDistance = true
+		elseif not message.enter and message.other_id == hash("/player/player") then
+			-- take action for exit
+			msg.post(message.other_id, "exit&" .. go.get_id())
+			bossInPlayerDistance = false
+		end
+	end
+	--if the boss enters the player's radius then tell the player as such and update the boss's checker for that, and the reverse for if the boss exit's the player radius
+	
+end
+
+function on_input(self, action_id, action)
+	
+end
+
+function on_reload(self)
+	
+end

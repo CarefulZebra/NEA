@@ -1,0 +1,29 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	paused = false
+	--initialise the game as not paused
+	
+end
+
+function final(self)
+	
+end
+
+function update(self, dt)
+end
+
+function on_message(self, message_id, message, sender)
+	
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("pause") and action.released then
+		paused = not paused
+	end
+	--if the player hits the pause button, then flip pause from whatever it was (unpause if paused, pause if unpaused)
+		
+end
+
+function on_reload(self)
+	
+end

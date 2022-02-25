@@ -1,0 +1,28 @@
+key_trigger {
+  input: KEY_W
+  action: "up"
+}
+key_trigger {
+  input: KEY_SPACE
+  action: "dash"
+}
+key_trigger {
+  input: KEY_A
+  action: "left"
+}
+key_trigger {
+  input: KEY_D
+  action: "right"
+}
+key_trigger {
+  input: KEY_ESC
+  action: "pause"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_LEFT
+  action: "attack"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_RIGHT
+  action: "shoot"
+}
